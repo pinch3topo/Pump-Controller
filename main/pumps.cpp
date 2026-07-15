@@ -97,14 +97,5 @@ void pumpTask(void *parameter)
 
         printf("Pump %d Finished\n",zone+1);
     }
-}        pdMS_TO_TICKS(PUMP_RUNTIME_MS)
-    );
-
-    gpio_set_level(
-        pumpPins[zone],
-        0
-    );
-
-    zones[zone].pumpRunning = false;
-
+}      
 }
