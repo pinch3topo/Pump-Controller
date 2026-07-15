@@ -40,6 +40,23 @@ void app_main()
         printf("ERROR: Failed to create Controller Task\n");
     }
 
+    printf("Creating Pump Task...\n");
+
+    result =
+        xTaskCreate(
+            pumpTask,
+            "PumpTask",
+            4096,
+            NULL,
+            5,
+            NULL
+        );
+
+    if(result != pdPASS)
+    {
+        printf("ERROR: Failed to create Pump Task\n");
+    }
+
     while(true)
     {
         printZones();
