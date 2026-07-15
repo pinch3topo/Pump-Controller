@@ -35,7 +35,7 @@ void controllerTask(void *parameter)
                     zones[i].moisture
                 );
 
-                runPump(i);
+                enqueuePump(i);
             }
         }
 
