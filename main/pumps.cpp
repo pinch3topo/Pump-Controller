@@ -22,47 +22,82 @@ static gpio_num_t pumpPins[NUM_ZONES] =
 
 static constexpr uint32_t PUMP_RUNTIME_MS = 10000;
 
+static int queue[NUM_ZONES];
+
+static int head = 0;
+static int tail = 0;
+static int count = 0;
 
 void initPumps()
 {
     for(int i=0;i<NUM_ZONES;i++)
     {
         gpio_reset_pin(pumpPins[i]);
-
-        gpio_set_direction(
-            pumpPins[i],
-            GPIO_MODE_OUTPUT
-        );
-
-        gpio_set_level(
-            pumpPins[i],
-            0
-        );
+        gpio_set_direction(pumpPins[i], GPIO_MODE_OUTPUT);
+        gpio_set_level(pumpPins[i],0);
     }
 }
 
-
-
-void runPump(int zone)
+void enqueuePump(int zone)
 {
-
     if(zone < 0 || zone >= NUM_ZONES)
         return;
 
-    printf("\n");
-    printf("================================\n");
-    printf("Running Pump %d\n", zone + 1);
-    printf("================================\n");
+    // Already watering
+    if(zones[zone].pumpRunning)
+        return;
 
-    zones[zone].pumpRunning = true;
+    // Already waiting in queue
+    for(int i=0;i<count;i++)
+    {
+        int index=(head+i)%NUM_ZONES;
 
-    gpio_set_level(
-        pumpPins[zone],
-        1
-    );
+        if(queue[index]==zone)
+            return;
+    }
 
-    vTaskDelay(
-        pdMS_TO_TICKS(PUMP_RUNTIME_MS)
+    if(count>=NUM_ZONES)
+        return;
+
+    queue[tail]=zone;
+    tail=(tail+1)%NUM_ZONES;
+    count++;
+
+    printf("Queued Pump %d\n",zone+1);
+}
+
+void pumpTask(void *parameter)
+{
+    while(true)
+    {
+        if(count==0)
+        {
+            vTaskDelay(pdMS_TO_TICKS(500));
+            continue;
+        }
+
+        int zone=queue[head];
+
+        head=(head+1)%NUM_ZONES;
+        count--;
+
+        zones[zone].pumpRunning=true;
+
+        printf("\n=============================\n");
+        printf("Running Pump %d\n",zone+1);
+        printf("=============================\n");
+
+        gpio_set_level(pumpPins[zone],1);
+
+        vTaskDelay(pdMS_TO_TICKS(PUMP_RUNTIME_MS));
+
+        gpio_set_level(pumpPins[zone],0);
+
+        zones[zone].pumpRunning=false;
+
+        printf("Pump %d Finished\n",zone+1);
+    }
+}        pdMS_TO_TICKS(PUMP_RUNTIME_MS)
     );
 
     gpio_set_level(
