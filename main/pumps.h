@@ -3,6 +3,8 @@
 
 void initPumps();
 
-void runPump(int zone);
+void enqueuePump(int zone);
+
+void pumpTask(void *parameter);
 
 #endif
